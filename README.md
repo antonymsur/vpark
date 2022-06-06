@@ -6,8 +6,9 @@
 4. java -jar target/vpark-s1-0.0.1.jar #will run the cli with usage details
 
 ## Usage
-===============VPark Parking System=================
+
 Actions: 
+
         1. create  : create new parking lot
                 1 arg : parking lot type either of 'mall,stadium,airport'
                 
@@ -28,9 +29,9 @@ Actions:
 
 
 ## Technologies Used:
-Core Java - POJO's
-Unit Test using junit
-Build using Maven
-jacoco for code coverage - Not completely covered
-checkstyles
+1. Core Java - POJO's
+2. Unit Test using junit
+3. Build using Maven
+4. jacoco for code coverage - Not completely covered
+5. checkstyles
 
