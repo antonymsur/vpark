@@ -13,7 +13,7 @@ import static org.junit.Assert.*;
 
 /**
  *
- * @author qtpi
+ * @author antony
  */
 public class MainTest {
     
@@ -46,7 +46,7 @@ public class MainTest {
         argsList.add("15");
         argsList.add("5");
         expResult.put("args", argsList); 
-        HashMap<String, Object> result = Main.parse(cmdLine);
+        HashMap<String, Object> result = Command.parse(cmdLine);
         assertEquals(expResult, result);
 
     }

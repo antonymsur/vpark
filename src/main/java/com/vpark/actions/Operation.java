@@ -7,7 +7,7 @@ package com.vpark.actions;
 
 /**
  *
- * @author qtpi
+ * @author antony
  */
 public interface Operation {
      public void execute();

@@ -11,7 +11,7 @@ import com.vpark.model.Ticket;
 
 /**
  *
- * @author qtpi
+ * @author antony
  */
 public abstract class Store {
 

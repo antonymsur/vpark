@@ -6,6 +6,9 @@
 package com.vpark.actions;
 
 import com.vpark.Constants;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.StringTokenizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,5 +46,23 @@ public enum Command {
         } else {
             return COMMAND_UNKNOWN;
         }
+    }
+
+    public static HashMap<String, Object> parse(String cmdLine) {
+        HashMap<String, Object> commandMap = new HashMap<String, Object>();
+        StringTokenizer tokens = new StringTokenizer(cmdLine);
+        String strCmd = tokens.nextToken();
+        Command cmd = Command.get(strCmd);
+        commandMap.put("cmd", cmd);
+        if (cmd == Command.COMMAND_UNKNOWN) {
+            commandMap.put("args", null);
+        } else {
+            ArrayList<String> args = new ArrayList<String>();
+            while (tokens.hasMoreTokens()) {
+                args.add(tokens.nextToken());
+            }
+            commandMap.put("args", args);
+        }
+        return commandMap;
     }
 }

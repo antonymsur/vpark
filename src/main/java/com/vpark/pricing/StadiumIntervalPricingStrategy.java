@@ -27,9 +27,9 @@ public class StadiumIntervalPricingStrategy implements PricingStrategy {
         } else if (psType == SlotType.LV) {
             if (hours > 12) {
                 int remainingHrs = hours - 12;
-                amount = fourTo12LV + (remainingHrs * after12HPerHourLV);
+                amount = lessThan4LV + fourTo12LV + (remainingHrs * after12HPerHourLV);
             } else if (hours > 4) {
-                amount = fourTo12LV;
+                amount = lessThan4LV + fourTo12LV;
             } else {
                 amount = lessThan4LV;
             }
@@ -38,9 +38,9 @@ public class StadiumIntervalPricingStrategy implements PricingStrategy {
             if (hours > 12) {
                 int remainingHrs = hours - 12;
                 logger.info("hours " + hours + " remainingHrs " + remainingHrs);
-                amount = fourTo12Bike + (remainingHrs * after12HPerHourBike);
+                amount = lessThan4Bike + fourTo12Bike + (remainingHrs * after12HPerHourBike);
             } else if (hours > 4) {
-                amount = fourTo12Bike;
+                amount = lessThan4Bike + fourTo12Bike;
             } else {
                 amount = lessThan4Bike;
             }
@@ -54,7 +54,7 @@ public class StadiumIntervalPricingStrategy implements PricingStrategy {
         secs = secs % 3600;
         int mins = (int) (secs / 60);
         secs = secs % 60;
-        if (mins > 1) {
+        if (mins >= 1) {
             hours++;
         }
         return hours;

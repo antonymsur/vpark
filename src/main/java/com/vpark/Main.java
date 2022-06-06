@@ -3,6 +3,7 @@ package com.vpark;
 import com.vpark.actions.Command;
 import com.vpark.actions.LeaveOperation;
 import com.vpark.actions.ParkOperation;
+import com.vpark.actions.ParkingExecuteBatchOperation;
 import com.vpark.actions.ParkingOperation;
 import com.vpark.actions.ParkingStatusOperation;
 import com.vpark.exceptions.InvalidSlotCountException;
@@ -15,7 +16,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.StringTokenizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,33 +25,45 @@ public class Main {
     private static ParkingLot plot;
 
     public static void main(String[] args) {
-        printAppInfo();
 
-        try {
-
-            BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(System.in));
-            boolean noExit = true;
-            
-            while (noExit) {
-                if (plot == null) {
-                    logger.info("No Parking lot Ready to Serve. Please create a Parking lot first!!!");
+        if (args.length >= 1) {
+            logger.info("Length " + args.length);
+            if (args[0].equals("--test")) {
+                if (args.length > 1) {
+                    String fName = args[1];
+                    ParkingOperation op = new ParkingExecuteBatchOperation(fName);
+                    op.execute();
                 }
-                String line = reader.readLine();
-                if (line.trim().length() <= 0) {
-                    continue;
-                }
-                noExit = takeAction(line);
-
             }
-        } catch (Exception ex) {
-            logger.error("Irrecoverable Error, Exiting.. ", ex);
+        } else {
+            printAppInfo();
+
+            try {
+
+                BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(System.in));
+                boolean noExit = true;
+
+                while (noExit) {
+                    if (plot == null) {
+                        logger.info("No Parking lot Ready to Serve. Please create a Parking lot first!!!");
+                    }
+                    String line = reader.readLine();
+                    if (line.trim().length() <= 0) {
+                        continue;
+                    }
+                    noExit = takeAction(line);
+
+                }
+            } catch (Exception ex) {
+                logger.error("Irrecoverable Error, Exiting.. ", ex);
+            }
         }
     }
 
     public static boolean takeAction(String line) {
         ParkingOperation operation;
-        HashMap<String, Object> commandMap = parse(line);
+        HashMap<String, Object> commandMap = Command.parse(line);
         Command cmd = (Command) commandMap.get("cmd");
         ArrayList<String> argList = (ArrayList<String>) commandMap.get("args");
         SlotType sType = null;
@@ -61,125 +73,134 @@ public class Main {
         logger.info("Command to execute: " + cmd + argList);
         switch (cmd) {
             case PARKINGLOT_NEW:
-                plType = null;
-                vType = argList.get(0);
-                if ("mall".equalsIgnoreCase(vType)) {
-                    plType = ParkingLotType.Mall;
-                } else if ("airport".equalsIgnoreCase(vType)) {
-                    plType = ParkingLotType.Airport;
-                } else if ("stadium".equalsIgnoreCase(vType)) {
-                    plType = ParkingLotType.Stadium;
-                }
-                int bikeSlots = 10;
-                int lvSlots = 10;
-                int hvSlots = 10;
-                try {
-                    if (argList.size() > 1) {
-                        bikeSlots = Integer.parseInt(argList.get(1));
-                    }
-
-                    if (argList.size() > 2) {
-                        lvSlots = Integer.parseInt(argList.get(2));
-                    }
-                    if (argList.size() > 3) {
-                        hvSlots = Integer.parseInt(argList.get(3));
-                    }
-                    try {
-                        plot = new Builder.ParkingLotBuilder(plType)
-                                .addBikeSlots(bikeSlots)
-                                .addHVSlots(hvSlots)
-                                .addLVSlots(lvSlots)
-                                .addStore(new InMemoryStore())
-                                .build();
-                        logger.info("Created a Parking Lot :" + plot);
-                    } catch (InvalidSlotCountException ex) {
-                        logger.error("Create Parking Lot Error !!!", ex);
-                    }
-
-                } catch (NumberFormatException e) {
-                    logger.error("Error Parsing Arguments for create command", e);
-                }
+                createParkingLot(argList);
 
                 break;
             case PARKINGLOT_REPORT:
                 //TODO
                 break;
             case VEHCLE_PARK:
-                //bike/lmv/hmv
-                sType = null;
-                vType = argList.get(0);
-                if ("bike".equalsIgnoreCase(vType)) {
-                    sType = SlotType.Bike;
-                } else if ("lmv".equalsIgnoreCase(vType)) {
-                    sType = SlotType.LV;
-                } else if ("hmv".equalsIgnoreCase(vType)) {
-                    sType = SlotType.HV;
-                }
-                if (sType != null) {
-                    operation = new ParkOperation(plot, sType);
-                    operation.execute();
-                }
+                parkVehicle(argList);
                 break;
             case VEHICLE_LEAVE:
-                //bike/lmv/hmv
-                sType = null;
-                vType = argList.get(0);
-                ticketId = argList.get(1);
-                if ("bike".equalsIgnoreCase(vType)) {
-                    sType = SlotType.Bike;
-                } else if ("lmv".equalsIgnoreCase(vType)) {
-                    sType = SlotType.LV;
-                } else if ("hmv".equalsIgnoreCase(vType)) {
-                    sType = SlotType.HV;
-                }
-                if (sType != null) {
-                    operation = new LeaveOperation(plot, ticketId, sType);
-                    operation.execute();
-                }
+                leaveVehicle(argList);
 
                 break;
             case VEHICLE_STATUS:
-                sType = null;
-                vType = argList.get(0);
-                ticketId = argList.get(1);
-                if ("bike".equalsIgnoreCase(vType)) {
-                    sType = SlotType.Bike;
-                } else if ("lmv".equalsIgnoreCase(vType)) {
-                    sType = SlotType.LV;
-                } else if ("hmv".equalsIgnoreCase(vType)) {
-                    sType = SlotType.HV;
-                }
-                if (sType != null) {
-                    operation = new ParkingStatusOperation(plot, ticketId, sType);
-                    operation.execute();
-                }
+                getParkedVehicleStatus(argList);
                 break;
             case APP_CLOSE:
                 return false;
-               
+
         }
         return true;
     }
 
-    public static HashMap<String, Object> parse(String cmdLine) {
-        HashMap<String, Object> commandMap = new HashMap<String, Object>();
-        StringTokenizer tokens = new StringTokenizer(cmdLine);
-        String strCmd = tokens.nextToken();
-        Command cmd = Command.get(strCmd);
-        commandMap.put("cmd", cmd);
-        if (cmd == Command.COMMAND_UNKNOWN) {
-            commandMap.put("args", null);
-        } else {
-            ArrayList<String> args = new ArrayList<String>();
-            while (tokens.hasMoreTokens()) {
-                args.add(tokens.nextToken());
-            }
-            commandMap.put("args", args);
+    public static void getParkedVehicleStatus(ArrayList<String> argList) {
+        SlotType sType;
+        String vType;
+        String ticketId;
+        ParkingOperation operation;
+        sType = null;
+        vType = argList.get(0);
+        ticketId = argList.get(1);
+        if ("bike".equalsIgnoreCase(vType)) {
+            sType = SlotType.Bike;
+        } else if ("lmv".equalsIgnoreCase(vType)) {
+            sType = SlotType.LV;
+        } else if ("hmv".equalsIgnoreCase(vType)) {
+            sType = SlotType.HV;
         }
-        return commandMap;
+        if (sType != null) {
+            operation = new ParkingStatusOperation(plot, ticketId, sType);
+            operation.execute();
+        }
     }
 
-  
+    public static void leaveVehicle(ArrayList<String> argList) {
+        SlotType sType;
+        String vType;
+        String ticketId;
+        ParkingOperation operation;
+        //bike/lmv/hmv
+        sType = null;
+        vType = argList.get(0);
+        ticketId = argList.get(1);
+        if ("bike".equalsIgnoreCase(vType)) {
+            sType = SlotType.Bike;
+        } else if ("lmv".equalsIgnoreCase(vType)) {
+            sType = SlotType.LV;
+        } else if ("hmv".equalsIgnoreCase(vType)) {
+            sType = SlotType.HV;
+        }
+        if (sType != null) {
+            operation = new LeaveOperation(plot, ticketId, sType);
+            operation.execute();
+        }
+    }
+
+    public static void parkVehicle(ArrayList<String> argList) {
+        SlotType sType;
+        String vType;
+        ParkingOperation operation;
+        sType = null;
+        vType = argList.get(0);
+        if ("bike".equalsIgnoreCase(vType)) {
+            sType = SlotType.Bike;
+        } else if ("lmv".equalsIgnoreCase(vType)) {
+            sType = SlotType.LV;
+        } else if ("hmv".equalsIgnoreCase(vType)) {
+            sType = SlotType.HV;
+        }
+        if (sType != null) {
+            operation = new ParkOperation(plot, sType);
+            operation.execute();
+        }
+    }
+
+    public static void createParkingLot(ArrayList<String> argList) {
+        ParkingLotType plType;
+        String vType;
+        plType = null;
+        vType = argList.get(0);
+        if ("mall".equalsIgnoreCase(vType)) {
+            plType = ParkingLotType.Mall;
+        } else if ("airport".equalsIgnoreCase(vType)) {
+            plType = ParkingLotType.Airport;
+        } else if ("stadium".equalsIgnoreCase(vType)) {
+            plType = ParkingLotType.Stadium;
+        }
+        int bikeSlots = 10;
+        int lvSlots = 10;
+        int hvSlots = 10;
+        try {
+            if (argList.size() > 1) {
+                bikeSlots = Integer.parseInt(argList.get(1));
+            }
+            
+            if (argList.size() > 2) {
+                lvSlots = Integer.parseInt(argList.get(2));
+            }
+            if (argList.size() > 3) {
+                hvSlots = Integer.parseInt(argList.get(3));
+            }
+            try {
+                plot = new Builder.ParkingLotBuilder(plType)
+                        .addBikeSlots(bikeSlots)
+                        .addHVSlots(hvSlots)
+                        .addLVSlots(lvSlots)
+                        .addStore(new InMemoryStore())
+                        .build();
+                logger.info("Created a Parking Lot :" + plot);
+            } catch (InvalidSlotCountException ex) {
+                logger.error("Create Parking Lot Error !!!", ex);
+            }
+            
+        } catch (NumberFormatException e) {
+            logger.error("Error Parsing Arguments for create command", e);
+        }
+    }
+
 
     private static void printAppInfo() {
         StringBuilder builder = new StringBuilder();

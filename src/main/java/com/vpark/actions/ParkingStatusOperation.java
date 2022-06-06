@@ -37,7 +37,9 @@ public class ParkingStatusOperation implements ParkingOperation {
         Vehicle v;
         try {
             v = this.pLot.getParkedVehicle(hash);
-            logger.info(v.getTicket().toJSON());
+            if(v != null) {
+                logger.info(v.getTicket().toJSON());
+            }
         } catch (NoVehicleFoundException ex) {
             logger.error("NoVehicleFoundException !!!!");
         } catch (NoTicketFoundException ex) {

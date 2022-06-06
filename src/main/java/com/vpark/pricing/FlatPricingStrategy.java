@@ -37,7 +37,7 @@ public class FlatPricingStrategy implements PricingStrategy {
         secs = secs % 3600;
         int mins = (int) (secs / 60);
         secs = secs % 60;
-        if (mins > 1) {
+        if (mins >= 1) {
             hours++;
         }
         return hours;
